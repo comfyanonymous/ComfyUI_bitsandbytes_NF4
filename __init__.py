@@ -66,6 +66,8 @@ class ForgeParams4bit(Params4bit):
                 module=self.module
             )
             self.module.quant_state = n.quant_state
+            self.data = n.data
+            self.quant_state = n.quant_state
             return n
 
 
