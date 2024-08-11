@@ -2,4 +2,6 @@ A quickly written custom node that uses code from [Forge](https://github.com/lll
 
 Requires installing bitsandbytes.
 
+Make sure your ComfyUI is updated.
+
 The node is: CheckpointLoaderNF4, just plug it in your flux workflow instead of the regular one.
