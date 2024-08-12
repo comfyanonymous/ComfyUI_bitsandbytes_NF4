@@ -47,9 +47,16 @@ def copy_quant_state(state: QuantState, device: torch.device = None) -> QuantSta
         state2=state2,
     )
 
-
 class ForgeParams4bit(Params4bit):
-    def to(self, *args, **kwargs):
+    @classmethod
+    def __torch_function__(cls, func, types, args=(), kwargs=None):
+        if func != torch._C.TensorBase.detach:
+            return super().__torch_function__(func, types, args, kwargs or {})
+        return args[0]
+
+    def to(self, *args, copy=False, **kwargs):
+        if copy:
+            return self.to(*args, **kwargs)
         device, dtype, non_blocking, convert_to_format = torch._C._nn._parse_to(*args, **kwargs)
         if device is not None and device.type == "cuda" and not self.bnb_quantized:
             return self._quantize(device)
@@ -78,7 +85,7 @@ class ForgeLoader4Bit(torch.nn.Module):
         self.weight = None
         self.quant_state = None
         self.bias = None
-        self.quant_type = quant_type
+        self.quant_type = quant_type if quant_type is not None else "fp4"
 
     def _save_to_state_dict(self, destination, prefix, keep_vars):
         super()._save_to_state_dict(destination, prefix, keep_vars)
