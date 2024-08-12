@@ -48,15 +48,35 @@ def copy_quant_state(state: QuantState, device: torch.device = None) -> QuantSta
     )
 
 class ForgeParams4bit(Params4bit):
+    _torch_fn_depth=0
+
     @classmethod
     def __torch_function__(cls, func, types, args=(), kwargs=None):
-        if func != torch._C.TensorBase.detach:
+        if cls._torch_fn_depth > 0 or func != torch._C.TensorBase.detach:
             return super().__torch_function__(func, types, args, kwargs or {})
-        return args[0]
+        cls._torch_fn_depth += 1
+        try:
+            slf = args[0]
+            n = ForgeParams4bit(
+                    torch.nn.Parameter.detach(slf),
+                    requires_grad=slf.requires_grad,
+                    quant_state=copy_quant_state(slf.quant_state, slf.device),
+                    blocksize=slf.blocksize,
+                    compress_statistics=slf.compress_statistics,
+                    quant_type=slf.quant_type,
+                    quant_storage=slf.quant_storage,
+                    bnb_quantized=slf.bnb_quantized,
+                    module=slf.module
+                )
+            return n
+        finally:
+            cls._torch_fn_depth -= 1
+
+        # return args[0]
 
     def to(self, *args, copy=False, **kwargs):
         if copy:
-            return self.to(*args, **kwargs)
+            return self.clone().to(*args, **kwargs)
         device, dtype, non_blocking, convert_to_format = torch._C._nn._parse_to(*args, **kwargs)
         if device is not None and device.type == "cuda" and not self.bnb_quantized:
             return self._quantize(device)
@@ -165,9 +185,7 @@ class OPS(comfy.ops.manual_cast):
                 self.weight = self.weight.to(layer_original_device)
                 return out
             else:
-                weight, bias, signal = weights_manual_cast(self, x, skip_weight_dtype=True, skip_bias_dtype=True)
-                with main_stream_worker(weight, bias, signal):
-                    return functional_linear_4bits(x, weight, bias)
+                raise RuntimeError("Unexpected state in forward")
 
 
 class CheckpointLoaderNF4:
