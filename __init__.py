@@ -178,7 +178,27 @@ class CheckpointLoaderNF4:
         out = comfy.sd.load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True, embedding_directory=folder_paths.get_folder_paths("embeddings"), model_options={"custom_operations": OPS})
         return out[:3]
 
+class UNETLoaderNF4:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": { "unet_name": (folder_paths.get_filename_list("unet"), ),
+                             }}
+    RETURN_TYPES = ("MODEL",)
+    FUNCTION = "load_unet"
+
+    CATEGORY = "advanced/loaders"
+
+    def load_unet(self, unet_name):
+        unet_path = folder_paths.get_full_path("unet", unet_name)
+        model = comfy.sd.load_diffusion_model(unet_path, model_options={"custom_operations": OPS})
+        return (model,)
+
 NODE_CLASS_MAPPINGS = {
     "CheckpointLoaderNF4": CheckpointLoaderNF4,
+    "UNETLoaderNF4": UNETLoaderNF4,
 }
 
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "CheckpointLoaderNF4": "Load NF4 Flux Checkpoint",
+    "UNETLoaderNF4": "Load NF4 Flux UNET",
+}
