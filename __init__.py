@@ -36,7 +36,7 @@ def copy_quant_state(state: QuantState, device: torch.device = None) -> QuantSta
         else None
     )
 
-    return QuantState(
+    quant_state = QuantState(
         absmax=state.absmax.to(device),
         shape=state.shape,
         code=state.code.to(device),
@@ -47,6 +47,11 @@ def copy_quant_state(state: QuantState, device: torch.device = None) -> QuantSta
         state2=state2,
     )
 
+    # Manually add chunk_64_norm as an attribute if it exists
+    if hasattr(state, 'chunk_64_norm'):
+        quant_state.chunk_64_norm = state.chunk_64_norm.to(device)
+
+    return quant_state
 
 class ForgeParams4bit(Params4bit):
     def to(self, *args, **kwargs):
@@ -65,6 +70,11 @@ class ForgeParams4bit(Params4bit):
                 bnb_quantized=self.bnb_quantized,
                 module=self.module
             )
+
+            # Manually copy chunk_64_norm if it exists
+            if hasattr(self.quant_state, 'chunk_64_norm'):
+                n.quant_state.chunk_64_norm = self.quant_state.chunk_64_norm
+
             self.module.quant_state = n.quant_state
             self.data = n.data
             self.quant_state = n.quant_state
