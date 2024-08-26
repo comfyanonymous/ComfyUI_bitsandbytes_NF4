@@ -191,7 +191,7 @@ class CheckpointLoaderNF4:
 class UNETLoaderNF4:
     @classmethod
     def INPUT_TYPES(s):
-        return {"required": { "unet_name": (folder_paths.get_filename_list("unet"), ),
+        return {"required": { "unet_name": (folder_paths.get_filename_list("diffusion_models"), ),
                              }}
     RETURN_TYPES = ("MODEL",)
     FUNCTION = "load_unet"
