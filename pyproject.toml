@@ -1,7 +1,7 @@
 [project]
 name = "ComfyUI_bnb_NF4_loaders"
 description = "Checkpoint and UNET/Diffusion Model loaders for BitsAndBytes NF4 quantized models"
-version = "1.0.0"
+version = "1.0.1"
 license = { file = "LICENSE.txt" }
 
 [project.urls]
