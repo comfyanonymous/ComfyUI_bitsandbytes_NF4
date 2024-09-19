@@ -36,7 +36,7 @@ def copy_quant_state(state: QuantState, device: torch.device = None) -> QuantSta
         else None
     )
 
-    return QuantState(
+    quant_state = QuantState(
         absmax=state.absmax.to(device),
         shape=state.shape,
         code=state.code.to(device),
@@ -47,6 +47,11 @@ def copy_quant_state(state: QuantState, device: torch.device = None) -> QuantSta
         state2=state2,
     )
 
+    # Manually add chunk_64_norm as an attribute if it exists
+    if hasattr(state, 'chunk_64_norm'):
+        quant_state.chunk_64_norm = state.chunk_64_norm.to(device)
+
+    return quant_state
 
 class ForgeParams4bit(Params4bit):
     def to(self, *args, **kwargs):
@@ -65,6 +70,11 @@ class ForgeParams4bit(Params4bit):
                 bnb_quantized=self.bnb_quantized,
                 module=self.module
             )
+
+            # Manually copy chunk_64_norm if it exists
+            if hasattr(self.quant_state, 'chunk_64_norm'):
+                n.quant_state.chunk_64_norm = self.quant_state.chunk_64_norm
+
             self.module.quant_state = n.quant_state
             self.data = n.data
             self.quant_state = n.quant_state
@@ -178,7 +188,27 @@ class CheckpointLoaderNF4:
         out = comfy.sd.load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True, embedding_directory=folder_paths.get_folder_paths("embeddings"), model_options={"custom_operations": OPS})
         return out[:3]
 
+class UNETLoaderNF4:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": { "unet_name": (folder_paths.get_filename_list("diffusion_models"), ),
+                             }}
+    RETURN_TYPES = ("MODEL",)
+    FUNCTION = "load_unet"
+
+    CATEGORY = "advanced/loaders"
+
+    def load_unet(self, unet_name):
+        unet_path = folder_paths.get_full_path("unet", unet_name)
+        model = comfy.sd.load_diffusion_model(unet_path, model_options={"custom_operations": OPS})
+        return (model,)
+
 NODE_CLASS_MAPPINGS = {
     "CheckpointLoaderNF4": CheckpointLoaderNF4,
+    "UNETLoaderNF4": UNETLoaderNF4,
 }
 
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "CheckpointLoaderNF4": "Load NF4 Flux Checkpoint",
+    "UNETLoaderNF4": "Load NF4 Flux UNET",
+}
