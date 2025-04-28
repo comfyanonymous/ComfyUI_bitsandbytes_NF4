@@ -1,0 +1,14 @@
+[project]
+name = "ComfyUI_bnb_nf4_fp4_Loaders"
+description = 'Checkpoint and UNET/Diffusion Model loaders for <a href="https://github.com/bitsandbytes-foundation/bitsandbytes">BitsAndBytes</a> NF4 quantized models'
+version = "1.0.5"
+license = { file = "LICENSE.txt" }
+
+[project.urls]
+Repository = "https://github.com/silveroxides/ComfyUI_bitsandbytes_NF4"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = "silveroxides"
+DisplayName = "BitsAndBytes NF4 Loaders"
+Icon = ""
